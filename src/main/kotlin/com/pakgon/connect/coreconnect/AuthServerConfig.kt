@@ -31,11 +31,20 @@ import javax.sql.DataSource
 
 @Configuration
 @EnableAuthorizationServer
-class AuthServerConfigJwt: AuthorizationServerConfigurerAdapter() {
+class AuthServerConfig: AuthorizationServerConfigurerAdapter() {
+
+    @Autowired
+    private lateinit var env: Environment
 
     @Autowired
     @Qualifier("authenticationManagerBean")
     private lateinit var authenticationManager:AuthenticationManager
+
+    @Value("classpath:schema.sql")
+    private lateinit var schemaScript: Resource
+
+    @Value("classpath:data.sql")
+    private lateinit var dataScript: Resource
 
     override fun configure(oauthServer: AuthorizationServerSecurityConfigurer?) {
         oauthServer!!.tokenKeyAccess("permitAll()")
@@ -43,36 +52,14 @@ class AuthServerConfigJwt: AuthorizationServerConfigurerAdapter() {
     }
 
     override fun configure(clients: ClientDetailsServiceConfigurer?) {
-        clients!!.inMemory()
-                .withClient("sampleClientId")
-                    .authorizedGrantTypes("implicit")
-                    .scopes("read", "write", "foo", "bar")
-                    .autoApprove(false)
-                    .accessTokenValiditySeconds(3600).redirectUris("http://localhost:8083/")
+        clients!!.jdbc(dataSource())
+    }
 
-                .and().withClient("fooClientIdPassword")
-                    .secret(passwordEncoder().encode("secret"))
-                    .authorizedGrantTypes("password", "authorization_code", "refresh_token")
-                    .scopes("foo", "read", "write")
-                    .accessTokenValiditySeconds(3600)
-                    // 1 hour
-                    .refreshTokenValiditySeconds(2592000)
-                    // 30 days
-                    .redirectUris("xxx")
-
-                .and().withClient("barClientIdPassword")
-                    .secret(passwordEncoder().encode("secret"))
-                    .authorizedGrantTypes("password", "authorization_code", "refresh_token")
-                    .scopes("bar", "read", "write")
-                    .accessTokenValiditySeconds(3600)
-                    // 1 hour
-                    .refreshTokenValiditySeconds(2592000) // 30 days
-
-                .and().withClient("testImplicitClientId")
-                    .authorizedGrantTypes("implicit")
-                    .scopes("read", "write", "foo", "bar")
-                    .autoApprove(true)
-                    .redirectUris("xxx");
+    override fun configure(endpoints: AuthorizationServerEndpointsConfigurer?) {
+        val enhancerChain = TokenEnhancerChain()
+        endpoints!!.tokenStore(tokenStore())
+                .tokenEnhancer(enhancerChain)
+                .authenticationManager(authenticationManager)
     }
 
     @Bean
@@ -84,17 +71,39 @@ class AuthServerConfigJwt: AuthorizationServerConfigurerAdapter() {
         return defaultTokenServices
     }
 
-    override fun configure(endpoints: AuthorizationServerEndpointsConfigurer?) {
-        val enhancerChain = TokenEnhancerChain()
-        enhancerChain.setTokenEnhancers(listOf(accessTokenConverter()))
-        endpoints!!.tokenStore(tokenStore())
-                .tokenEnhancer(enhancerChain)
-                .authenticationManager(authenticationManager)
+    @Bean
+    fun dataSourceInitializer(dataSource: DataSource): DataSourceInitializer {
+        val initializer = DataSourceInitializer()
+        initializer.setDataSource(dataSource)
+        initializer.setDatabasePopulator(databasePopulator())
+        return initializer
+    }
+
+    private fun databasePopulator(): DatabasePopulator {
+        val populator = ResourceDatabasePopulator()
+        populator.addScript(schemaScript)
+        populator.addScript(dataScript)
+        return populator
     }
 
     @Bean
+    fun dataSource(): DataSource {
+        val dataSource = DriverManagerDataSource()
+        dataSource.setDriverClassName("org.h2.Driver")
+        dataSource.url = "jdbc:h2:~/data/oauth2;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;AUTO_SERVER=TRUE"
+        dataSource.username = "sa"
+        dataSource.password = ""
+        return dataSource
+    }
+
+//    @Bean
+//    fun tokenStore(): TokenStore {
+//        return JdbcTokenStore(dataSource())
+//    }
+
+    @Bean
     fun tokenStore(): TokenStore {
-        return JwtTokenStore(accessTokenConverter())
+        return JdbcTokenStore(dataSource())
     }
 
     @Bean
