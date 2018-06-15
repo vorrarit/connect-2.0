@@ -22,6 +22,7 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer
 import org.springframework.security.oauth2.provider.token.DefaultTokenServices
+import org.springframework.security.oauth2.provider.token.TokenEnhancer
 import org.springframework.security.oauth2.provider.token.TokenEnhancerChain
 import org.springframework.security.oauth2.provider.token.TokenStore
 import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore
@@ -86,7 +87,7 @@ class AuthServerConfigJwt: AuthorizationServerConfigurerAdapter() {
 
     override fun configure(endpoints: AuthorizationServerEndpointsConfigurer?) {
         val enhancerChain = TokenEnhancerChain()
-        enhancerChain.setTokenEnhancers(listOf(accessTokenConverter()))
+        enhancerChain.setTokenEnhancers(listOf(tokenEnhancer(), accessTokenConverter()))
         endpoints!!.tokenStore(tokenStore())
                 .tokenEnhancer(enhancerChain)
                 .authenticationManager(authenticationManager)
@@ -102,6 +103,11 @@ class AuthServerConfigJwt: AuthorizationServerConfigurerAdapter() {
         val converter = JwtAccessTokenConverter()
         converter.setSigningKey("123")
         return converter
+    }
+
+    @Bean
+    fun tokenEnhancer(): TokenEnhancer {
+        return CustomTokenEnhancer()
     }
 
     @Bean

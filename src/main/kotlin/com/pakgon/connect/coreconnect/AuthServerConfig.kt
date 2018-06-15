@@ -22,6 +22,7 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer
 import org.springframework.security.oauth2.provider.token.DefaultTokenServices
+import org.springframework.security.oauth2.provider.token.TokenEnhancer
 import org.springframework.security.oauth2.provider.token.TokenEnhancerChain
 import org.springframework.security.oauth2.provider.token.TokenStore
 import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore
@@ -57,6 +58,7 @@ class AuthServerConfig: AuthorizationServerConfigurerAdapter() {
 
     override fun configure(endpoints: AuthorizationServerEndpointsConfigurer?) {
         val enhancerChain = TokenEnhancerChain()
+        enhancerChain.setTokenEnhancers(listOf(tokenEnhancer()))
         endpoints!!.tokenStore(tokenStore())
                 .tokenEnhancer(enhancerChain)
                 .authenticationManager(authenticationManager)
@@ -69,6 +71,11 @@ class AuthServerConfig: AuthorizationServerConfigurerAdapter() {
         defaultTokenServices.setTokenStore(tokenStore())
         defaultTokenServices.setSupportRefreshToken(true)
         return defaultTokenServices
+    }
+
+    @Bean
+    fun tokenEnhancer(): TokenEnhancer {
+        return CustomTokenEnhancer()
     }
 
     @Bean
