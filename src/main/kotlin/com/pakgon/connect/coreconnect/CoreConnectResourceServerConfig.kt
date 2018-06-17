@@ -39,6 +39,7 @@ class CoreConnectResourceServerConfig: ResourceServerConfigurerAdapter() {
         val converter = JwtAccessTokenConverter()
         val resource = ClassPathResource("public.txt")
         val publicKey = InputStreamReader(resource.inputStream).readText()
+        println(publicKey)
         converter.setVerifierKey(publicKey)
         return converter
     }

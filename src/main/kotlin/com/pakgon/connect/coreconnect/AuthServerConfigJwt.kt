@@ -6,18 +6,13 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
-import org.springframework.core.env.Environment
 import org.springframework.core.io.ClassPathResource
-import org.springframework.core.io.Resource
-import org.springframework.jdbc.datasource.DriverManagerDataSource
-import org.springframework.jdbc.datasource.init.DataSourceInitializer
-import org.springframework.jdbc.datasource.init.DatabasePopulator
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.jwt.crypto.sign.Signer
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer
@@ -26,11 +21,9 @@ import org.springframework.security.oauth2.provider.token.DefaultTokenServices
 import org.springframework.security.oauth2.provider.token.TokenEnhancer
 import org.springframework.security.oauth2.provider.token.TokenEnhancerChain
 import org.springframework.security.oauth2.provider.token.TokenStore
-import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore
 import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFactory
-import javax.sql.DataSource
 
 @Configuration
 @EnableAuthorizationServer
@@ -90,9 +83,17 @@ class AuthServerConfigJwt: AuthorizationServerConfigurerAdapter() {
     override fun configure(endpoints: AuthorizationServerEndpointsConfigurer?) {
         val enhancerChain = TokenEnhancerChain()
         enhancerChain.setTokenEnhancers(listOf(tokenEnhancer(), accessTokenConverter()))
-        endpoints!!.tokenStore(tokenStore())
-                .tokenEnhancer(enhancerChain)
+//        endpoints!!.tokenStore(tokenStore())
+//                .tokenEnhancer(accessTokenConverter())
+//                .authenticationManager(authenticationManager)
+        val tokenConverter = JwtAccessTokenConverter()
+        tokenConverter.setSigningKey("123")
+        val keyStoreKeyFactory = KeyStoreKeyFactory(ClassPathResource("mytest.jks"), "password".toCharArray())
+        tokenConverter.setKeyPair(keyStoreKeyFactory.getKeyPair("mytest"))
+        endpoints!!.tokenStore(JwtTokenStore(tokenConverter))
+                .tokenEnhancer(tokenConverter)
                 .authenticationManager(authenticationManager)
+
     }
 
     @Bean
@@ -102,13 +103,8 @@ class AuthServerConfigJwt: AuthorizationServerConfigurerAdapter() {
 
     @Bean
     fun accessTokenConverter():JwtAccessTokenConverter {
-//        val converter = JwtAccessTokenConverter()
-//        converter.setSigningKey("123")
-//        return converter
         val converter = JwtAccessTokenConverter()
         converter.setSigningKey("123")
-        val keyStoreKeyFactory = KeyStoreKeyFactory(ClassPathResource("mytest.jks"), "password".toCharArray())
-        converter.setKeyPair(keyStoreKeyFactory.getKeyPair("mytest"))
         return converter
     }
 

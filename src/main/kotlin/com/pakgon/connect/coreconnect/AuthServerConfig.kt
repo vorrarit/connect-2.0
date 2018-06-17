@@ -115,17 +115,17 @@ class AuthServerConfig: AuthorizationServerConfigurerAdapter() {
         return JdbcTokenStore(dataSource())
     }
 
-    @Bean
-    fun accessTokenConverter():JwtAccessTokenConverter {
+//    @Bean
+//    fun accessTokenConverter():JwtAccessTokenConverter {
 //        val converter = JwtAccessTokenConverter()
 //        converter.setSigningKey("123")
 //        return converter
-        val converter = JwtAccessTokenConverter()
-        converter.setSigningKey("123")
-        val keyStoreKeyFactory = KeyStoreKeyFactory(ClassPathResource("mytest.jks"), "password".toCharArray())
-        converter.setKeyPair(keyStoreKeyFactory.getKeyPair("mytest"))
-        return converter
-    }
+//        val converter = JwtAccessTokenConverter()
+//        converter.setSigningKey("123")
+//        val keyStoreKeyFactory = KeyStoreKeyFactory(ClassPathResource("mytest.jks"), "password".toCharArray())
+//        converter.setKeyPair(keyStoreKeyFactory.getKeyPair("mytest"))
+//        return converter
+//    }
 
     @Bean
     fun passwordEncoder(): PasswordEncoder {
