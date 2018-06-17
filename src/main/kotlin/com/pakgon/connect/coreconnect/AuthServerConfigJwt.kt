@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.core.env.Environment
+import org.springframework.core.io.ClassPathResource
 import org.springframework.core.io.Resource
 import org.springframework.jdbc.datasource.DriverManagerDataSource
 import org.springframework.jdbc.datasource.init.DataSourceInitializer
@@ -28,6 +29,7 @@ import org.springframework.security.oauth2.provider.token.TokenStore
 import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore
+import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFactory
 import javax.sql.DataSource
 
 @Configuration
@@ -100,8 +102,13 @@ class AuthServerConfigJwt: AuthorizationServerConfigurerAdapter() {
 
     @Bean
     fun accessTokenConverter():JwtAccessTokenConverter {
+//        val converter = JwtAccessTokenConverter()
+//        converter.setSigningKey("123")
+//        return converter
         val converter = JwtAccessTokenConverter()
         converter.setSigningKey("123")
+        val keyStoreKeyFactory = KeyStoreKeyFactory(ClassPathResource("mytest.jks"), "password".toCharArray())
+        converter.setKeyPair(keyStoreKeyFactory.getKeyPair("mytest"))
         return converter
     }
 
