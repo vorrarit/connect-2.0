@@ -54,7 +54,7 @@ class AuthServerConfigJwt: AuthorizationServerConfigurerAdapter() {
                     // 1 hour
                     .refreshTokenValiditySeconds(2592000)
                     // 30 days
-                    .redirectUris("xxx")
+                    .redirectUris("https://www.getpostman.com/oauth2/callback")
 
                 .and().withClient("barClientIdPassword")
                     .secret(passwordEncoder().encode("secret"))

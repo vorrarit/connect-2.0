@@ -61,8 +61,15 @@ class AuthServerConfig: AuthorizationServerConfigurerAdapter() {
     override fun configure(endpoints: AuthorizationServerEndpointsConfigurer?) {
         val enhancerChain = TokenEnhancerChain()
         enhancerChain.setTokenEnhancers(listOf(tokenEnhancer()))
-        endpoints!!.tokenStore(tokenStore())
-                .tokenEnhancer(enhancerChain)
+//        endpoints!!.tokenStore(tokenStore())
+//                .tokenEnhancer(enhancerChain)
+//                .authenticationManager(authenticationManager)
+        val tokenConverter = JwtAccessTokenConverter()
+        tokenConverter.setSigningKey("123")
+        val keyStoreKeyFactory = KeyStoreKeyFactory(ClassPathResource("mytest.jks"), "password".toCharArray())
+        tokenConverter.setKeyPair(keyStoreKeyFactory.getKeyPair("mytest"))
+        endpoints!!.tokenStore(JwtTokenStore(tokenConverter))
+                .tokenEnhancer(tokenConverter)
                 .authenticationManager(authenticationManager)
     }
 
